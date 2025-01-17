@@ -18,6 +18,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # FIREBASE_CREDENTIALS= "../credentials/firebase_service_account.json"
 # FIREBASE_CREDENTIALS = os.path.join(os.path.dirname(__file__), 'firebase_service_account.json')
 FIREBASE_CREDENTIALS = os.path.join(BASE_DIR, 'credentials', 'firebase_service_account.json')
+
 # FIREBASE_CREDENTIALS = '/etc/secrets/firebase_service_account.json'
 # FIREBASE_CREDENTIALS = os.getenv('FIREBASE_CREDENTIALS', os.path.join(BASE_DIR, 'credentials', 'firebase_service_account.json'))
 
