@@ -29,7 +29,7 @@ class MachineViewSet(ModelViewSet):
     filterset_class = MachineFilter
     ordering_fields = '__all__'  # Allows ordering on all fields
     ordering = ['id']  # Default ordering (optional)
-    pagination_class = MachinePagination
+    # pagination_class = MachinePagination
     search_fields = ['machine_id', 'brand__name', 'category__name', 'type__name', 'model_number', 'serial_no', 'location__room']
 
     # permission_classes = [DjangoModelPermissions]
