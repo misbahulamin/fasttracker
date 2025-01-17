@@ -1,4 +1,8 @@
 credentials/
 .env
+<<<<<<< HEAD
 *.pyc
 __pycache__/
+=======
+/db.sqlite3/
+>>>>>>> 9838210884ffc8555cbc76eb62874a323a1b81d8
