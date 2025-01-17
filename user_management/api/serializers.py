@@ -82,9 +82,9 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-    department = serializers.CharField(source='department.name')
-    designation = serializers.CharField(source='designation.title')
-    company = serializers.CharField(source='company.name')
+    department = serializers.PrimaryKeyRelatedField(queryset=Department.objects.all())
+    designation = serializers.PrimaryKeyRelatedField(queryset=Designation.objects.all())
+    company = serializers.PrimaryKeyRelatedField(queryset=Company.objects.all())
 
     class Meta:
         model = Employee
@@ -94,41 +94,21 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         ]
 
     def validate_company(self, value):
-        """
-        Ensure the company exists.
-        """
         if not Company.objects.filter(id=value.id).exists():
             raise serializers.ValidationError("Company does not exist.")
         return value
 
     def validate_department(self, value):
-        """
-        Ensure the department exists.
-        """
         if not Department.objects.filter(id=value.id).exists():
             raise serializers.ValidationError("Department does not exist.")
         return value
 
     def validate_designation(self, value):
-        """
-        Ensure the designation exists.
-        """
         if not Designation.objects.filter(id=value.id).exists():
             raise serializers.ValidationError("Designation does not exist.")
         return value
 
-    def validate_location(self, value):
-        """
-        Ensure the location exists.
-        """
-        if not Line.objects.filter(id=value.id).exists():
-            raise serializers.ValidationError("Location does not exist.")
-        return value
-
     def create(self, validated_data):
-        """
-        Create a new Employee along with the associated User.
-        """
         user_data = validated_data.pop('user')
         user_serializer = UserSerializer(data=user_data)
         user_serializer.is_valid(raise_exception=True)

@@ -8,7 +8,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User, Group
 from django.shortcuts import redirect
 
-from ..models import Employee, Department, Designation, DeviceToken
+from ..models import Employee, Department, Designation, DeviceToken, Company
 from .serializers import (
     UserRegistrationSerializer,
     UserLoginSerializer,
@@ -33,13 +33,9 @@ from permissions.base_permissions import (
 # Registration View
 # -----------------------------------------------------
 class UserRegistrationView(generics.CreateAPIView):
-    # permission_classes = [IsAdminOrHR]
     serializer_class = UserRegistrationSerializer
 
     def create(self, request, *args, **kwargs):
-        """
-        Create a new user (and the associated Employee model).
-        """
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -51,6 +47,23 @@ class UserRegistrationView(generics.CreateAPIView):
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # def get(self, request, *args, **kwargs):
+    #     """
+    #     Get data for dropdown: companies, departments, and designations
+    #     """
+    #     companies = Company.objects.all().values('id', 'name')
+    #     departments = Department.objects.all().values('id', 'name')
+    #     designations = Designation.objects.all().values('id', 'title')
+
+    #     return Response(
+    #         {
+    #             "companies": list(companies),
+    #             "departments": list(departments),
+    #             "designations": list(designations),
+    #         },
+    #         status=status.HTTP_200_OK
+    #     )
 
 
 # -----------------------------------------------------
