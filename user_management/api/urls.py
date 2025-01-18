@@ -16,6 +16,7 @@ urlpatterns = [
     path('register/', UserRegistrationView.as_view(), name='register'),  # Add a non-viewset view
     path('login/', UserLoginApiView.as_view(), name='login'),
     path('employee-list/', EmployeeListAPIView.as_view(), name='employee-list'),
+    path('employee-list/<int:id>/', EmployeeListAPIView.as_view(), name='specific-employee'),
     path('user-list/', UserListView.as_view(), name='user-list'),
     path('logout/', UserLogoutView.as_view(), name='logout'),
     path('employee-details/', EmployeeNameAPIView.as_view(), name='employee-details'),
