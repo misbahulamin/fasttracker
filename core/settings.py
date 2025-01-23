@@ -168,6 +168,7 @@ CORS_ALLOWED_ORIGINS = [
      "http://localhost:5173",  # or your frontend URL
      "https://machine-maintenance.onrender.com",
      "https://machine-maintenance-two.vercel.app",
+     "http://panamech.com",
  ]
 
 # settings.py
