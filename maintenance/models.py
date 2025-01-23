@@ -58,27 +58,31 @@ class Machine(models.Model):
     def __str__(self):
         return f"{self.category} ({self.model_number})"
 
+
+class ProblemCategoryType(models.Model):
+    """Main categories of problems."""
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
 class ProblemCategory(models.Model):
     SEVERITY_CHOICES = [
         ('minor', 'Minor'),
         ('major', 'Major'),
         ('critical', 'Critical'),
     ]
-    
-    CATEGORY_TYPE_CHOICES = [
-        ('machine', 'Machine Issue'),
-        ('operator', 'Operator Error'),
-        ('material', 'Material Defect'),
-        ('environment', 'Environmental Issue'),
-    ]
 
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True, null=True)
     severity = models.CharField(max_length=10, choices=SEVERITY_CHOICES, default='minor')
-    category_type = models.CharField(max_length=20, choices=CATEGORY_TYPE_CHOICES, default='machine')
+    category_type = models.ForeignKey(
+        ProblemCategoryType, related_name="categories", on_delete=models.CASCADE
+    )
     
     def __str__(self):
-        return f"{self.name}"
+        return f"{self.name} ({self.category_type})"
 
 
 class BreakdownLog(models.Model):

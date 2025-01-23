@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from maintenance.models import BreakdownLog
-from ..models import Machine, Type, Brand, Category, Supplier, ProblemCategory
+from ..models import Machine, Type, Brand, Category, Supplier, ProblemCategory, ProblemCategoryType
 
 class MachineSerializer(serializers.ModelSerializer):
     class Meta:
@@ -39,3 +39,10 @@ class ProblemCategorySerializers(serializers.ModelSerializer):
     class Meta:
         model = ProblemCategory
         fields = '__all__'
+
+class ProblemCategoryTypeSerializer(serializers.ModelSerializer):
+    categories = ProblemCategorySerializers(many=True, read_only=True)
+
+    class Meta:
+        model = ProblemCategoryType
+        fields = ['id', 'name', 'description', 'categories']

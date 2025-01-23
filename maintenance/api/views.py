@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from ..models import BreakdownLog, Machine, Type, Brand, Category, Supplier, ProblemCategory
-from .serializers import BreakdownLogSerializer, MachineSerializer, TypeSerializers, BrandSerializers, CategorySerializers, SupplierSerializers, ProblemCategorySerializers
+from ..models import BreakdownLog, Machine, Type, Brand, Category, Supplier, ProblemCategory, ProblemCategoryType
+from .serializers import BreakdownLogSerializer, MachineSerializer, TypeSerializers, BrandSerializers, CategorySerializers, SupplierSerializers, ProblemCategorySerializers, ProblemCategoryTypeSerializer
 from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from ..filters import MachineFilter
@@ -258,4 +258,8 @@ class CategoryViewSet(ModelViewSet):
 class ProblemCategoryViewSet(ModelViewSet):
     queryset = ProblemCategory.objects.all()
     serializer_class = ProblemCategorySerializers
+
+class ProblemCategoryTypeViewSet(ModelViewSet):
+    queryset = ProblemCategoryType.objects.all()
+    serializer_class = ProblemCategoryTypeSerializer
 
