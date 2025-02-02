@@ -7,7 +7,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from ..filters import MachineFilter
 from rest_framework import filters
 from rest_framework.pagination import PageNumberPagination
-from permissions.base_permissions import IsAdmin, IsHR, IsMechanic, IsSupervisor, IsAdminOrSupervisorOrMechanic, IsAdminOrMechanic
+from permissions.base_permissions import HasGroupPermission
 from rest_framework.exceptions import NotFound
 from django.db.models import Sum
 from rest_framework.decorators import action
@@ -25,49 +25,37 @@ class MachinePagination(PageNumberPagination):
 class MachineViewSet(ModelViewSet):
     queryset = Machine.objects.all()
     serializer_class = MachineSerializer
-    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     filterset_class = MachineFilter
     ordering_fields = '__all__'  # Allows ordering on all fields
-    ordering = ['id']  # Default ordering (optional)
-    # pagination_class = MachinePagination
-    search_fields = ['machine_id', 'brand__name', 'category__name', 'type__name', 'model_number', 'serial_no', 'location__room']
+    ordering = ['id']  
+    # permission_classes = [HasGroupPermission]
+    search_fields = [
+        'machine_id', 'category__name', 'type__name', 'brand__name', 
+        'model_number', 'serial_no', 'line__name', 'sequence', 'supplier__name', 
+        'purchase_date', 'last_breakdown_start', 'last_repairing_start', 
+        'mechanic__name', 'operator__name', 'last_problem', 'status', 
+        'company__name', 'line__floor__name'
+    ]
 
-    # permission_classes = [DjangoModelPermissions]
-
-    def get_ordering(self):
-        ordering = self.request.query_params.get('ordering', None)
-        if ordering:
-            # Validate if the ordering field is allowed
-            allowed_fields = ['purchase_date', 'brand_name', 'categoryname', 'type_name']
-            if ordering not in allowed_fields:
-                raise NotFound(f"Ordering by '{ordering}' is not allowed.")
-            return [ordering]
-        return super().get_ordering()
+    # def get_ordering(self):
+    #     ordering = self.request.query_params.get('ordering', None)
+    #     if ordering:
+    #         # Validate if the ordering field is allowed
+    #         allowed_fields = ['purchase_date', 'brand_name', 'categoryname', 'type_name']
+    #         if ordering not in allowed_fields:
+    #             raise NotFound(f"Ordering by '{ordering}' is not allowed.")
+    #         return [ordering]
+    #     return super().get_ordering()
     
-    # def get_queryset(self):
-    #     # Check if the user belongs to the "Machine Viewer" group
-    #     if not self.request.user.groups.filter(name="Machine-Viewer").exists():
-    #         raise PermissionDenied("You do not have permission to view machines.")
 
-    #     # If the user is in the "Machine Viewer" group, return the queryset
-    #     return super().get_queryset()
-    
-    # def get_permissions(self):
-    #     if self.action in ['list', 'retrieve']:
-    #         # print(f"{self.action.capitalize()} called.")
-    #         return [IsAdminOrSupervisorOrMechanic()]
-        
-    #     if self.action in ['create', 'update', 'partial_update', 'destroy']:
-    #         # print(f"{self.action} called.")
-    #         return [IsAdminOrMechanic()]  # Adjust as needed
-        
-    #     return super().get_permissions()
 
 
     
 class BreakdownLogViewSet(ModelViewSet):
     queryset = BreakdownLog.objects.all()
-    serializer_class = BreakdownLogSerializer    
+    serializer_class = BreakdownLogSerializer
+    # permission_classes = [HasGroupPermission]
 
     @action(detail=False, methods=["get"], url_path="total-lost-time-per-location")
     def total_lost_time(self, request):
@@ -240,26 +228,32 @@ class BreakdownLogViewSet(ModelViewSet):
 class TypeViewSet(ModelViewSet):
     queryset = Type.objects.all()
     serializer_class = TypeSerializers
+    # permission_classes = [HasGroupPermission]
 
 class BrandViewSet(ModelViewSet):
     queryset = Brand.objects.all()
     serializer_class = BrandSerializers
+    # permission_classes = [HasGroupPermission]
 
 class SupplierViewSet(ModelViewSet):
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializers
+    # permission_classes = [HasGroupPermission]
 
 
 
 class CategoryViewSet(ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializers
+    # permission_classes = [HasGroupPermission]
 
 class ProblemCategoryViewSet(ModelViewSet):
     queryset = ProblemCategory.objects.all()
     serializer_class = ProblemCategorySerializers
+    # permission_classes = [HasGroupPermission]
 
 class ProblemCategoryTypeViewSet(ModelViewSet):
     queryset = ProblemCategoryType.objects.all()
     serializer_class = ProblemCategoryTypeSerializer
+    # permission_classes = [HasGroupPermission]
 

@@ -1,6 +1,43 @@
-credentials/
-.env
-/db.sqlite3/
-__pycache__/
+# Python-related
 *.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.env
 
+# Django-related
+*.log
+media/
+static/
+
+# Environment and IDE-related
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+*.egg-info/
+.env/
+credentials/
+
+# Build-related
+build/
+dist/
+*.egg
+*.egg-info/
+*.eggs/
+
+# OS-specific
+Thumbs.db
+
+
+
+# Towaha's File
+notes.txt
+towaha_aws_steps.md
+scripts
+appspec.yml
+buildspec.yml
+gunicorn
+nginx
+noteFile.md

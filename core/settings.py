@@ -11,16 +11,12 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
 from pathlib import Path
+import json
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# FIREBASE_CREDENTIALS= "../credentials/firebase_service_account.json"
-# FIREBASE_CREDENTIALS = os.path.join(os.path.dirname(__file__), 'firebase_service_account.json')
-FIREBASE_CREDENTIALS = os.path.join(BASE_DIR, 'credentials', 'firebase_service_account.json')
 
-# FIREBASE_CREDENTIALS = '/etc/secrets/firebase_service_account.json'
-# FIREBASE_CREDENTIALS = os.getenv('FIREBASE_CREDENTIALS', os.path.join(BASE_DIR, 'credentials', 'firebase_service_account.json'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -34,8 +30,9 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
 
+# --------------------------
 # Application definition
-
+# --------------------------
 INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',
     'django.contrib.admin',
@@ -97,10 +94,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+# --------------------------
+# Django Default Database
+# --------------------------
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
 
 # DATABASES = {
 #     'default': {
@@ -109,6 +108,10 @@ WSGI_APPLICATION = 'core.wsgi.application'
 #     }
 # }
 
+
+# --------------------------
+# AWS RDS Server Database
+# --------------------------
 
 DATABASES = {
     'default': {
@@ -120,6 +123,22 @@ DATABASES = {
         'PORT': '5432',  # Default PostgreSQL port
     }
 }
+
+# --------------------------
+# Supabase Database
+# --------------------------
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'postgres',
+#         'USER': 'postgres.wcwfjxivmbtypagaomge',
+#         'PASSWORD': 'Iam@6074#',
+#         'HOST': 'aws-0-eu-west-1.pooler.supabase.com',
+#         'PORT': '6543'
+#     }
+# }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -168,7 +187,7 @@ CORS_ALLOWED_ORIGINS = [
      "http://localhost:5173",  # or your frontend URL
      "https://machine-maintenance.onrender.com",
      "https://machine-maintenance-two.vercel.app",
-     "https://panamach.com",
+     "http://panamech.com",
  ]
 
 # settings.py
@@ -179,3 +198,9 @@ CSRF_TRUSTED_ORIGINS = [
     'https://machine-maintenance-two.vercel.app',
 ]
 
+
+# ----------------------------------------
+# FIREBASE CREDENTIALS for Push Notification
+# ------------------------------------------
+
+FIREBASE_CREDENTIALS = os.path.join(BASE_DIR, 'credentials', 'firebase_service_account.json')

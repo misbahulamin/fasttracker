@@ -24,6 +24,7 @@ class DepartmentAdmin(admin.ModelAdmin):
 
 class DesignationAdmin(admin.ModelAdmin):
     list_display = ('title', 'company')
+    
 
 admin.site.register(Employee, EmployeeAdmin)
 admin.site.register(Department, DepartmentAdmin)

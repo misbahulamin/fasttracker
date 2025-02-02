@@ -81,6 +81,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
 # --------------------------
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
+    permission_group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all(), required=False)
     user = UserSerializer()
     department = serializers.PrimaryKeyRelatedField(queryset=Department.objects.all())
     designation = serializers.PrimaryKeyRelatedField(queryset=Designation.objects.all())
@@ -90,7 +91,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = Employee
         fields = [
             'id','user', 'name', 'company', 'department', 'mobile',
-            'designation', 'employee_id', 'date_of_joining'
+            'designation', 'permission_group', 'employee_id', 'date_of_joining'
         ]
 
     def validate_company(self, value):
@@ -109,12 +110,15 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        group = validated_data.pop('permission_group', None)
         user_data = validated_data.pop('user')
         user_serializer = UserSerializer(data=user_data)
         user_serializer.is_valid(raise_exception=True)
         user = user_serializer.save()
-
         employee = Employee.objects.create(user=user, **validated_data)
+        if group:
+            user.groups.add(group)
+            user.user_permissions.set(group.permissions.all())
         return employee
 
 # --------------------------
