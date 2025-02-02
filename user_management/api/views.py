@@ -16,17 +16,11 @@ from .serializers import (
     DepartmentSerializer,
     DesignationSerializer,
     DeviceTokenSerializer,
-    GroupSerializer
+    GroupSerializer,
+    EmployeeSerializer,
+    UserSerializer
 )
-from permissions.base_permissions import (
-    IsAdmin, 
-    IsHR, 
-    IsMechanic, 
-    IsSupervisor, 
-    IsAdminOrSupervisorOrMechanic, 
-    IsAdminOrMechanic, 
-    IsAdminOrHR
-)
+from permissions.base_permissions import HasGroupPermission
 
 
 # -----------------------------------------------------
@@ -34,6 +28,7 @@ from permissions.base_permissions import (
 # -----------------------------------------------------
 class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
+    # permission_classes = [HasGroupPermission]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -72,7 +67,7 @@ class UserRegistrationView(generics.CreateAPIView):
 class AddEmployeeViewset(ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = AddEmployeeSerializer
-    # permission_classes =  [IsAdminOrHR, IsAuthenticated]  # Adjust as needed
+    # permission_classes = [HasGroupPermission]
 
 
 # -----------------------------------------------------
@@ -111,7 +106,8 @@ class UserLoginApiView(APIView):
 # List All Users
 # -----------------------------------------------------
 class UserListView(APIView):
-    # permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+    # permission_classes = [HasGroupPermission]
 
     def get(self, request):
         """
@@ -130,7 +126,9 @@ class UserListView(APIView):
 # -----------------------------------------------------
 
 class EmployeeListAPIView(APIView):
-    # permission_classes = [IsAuthenticated]
+    serializer_class = EmployeeSerializer
+    model = Employee
+    # permission_classes = [HasGroupPermission]
 
     def get(self, request, id=None):
         """
@@ -175,7 +173,7 @@ class EmployeeListAPIView(APIView):
 # Logout View
 # -----------------------------------------------------
 class UserLogoutView(APIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         """
@@ -186,28 +184,6 @@ class UserLogoutView(APIView):
         return Response({'success': "Logout successful"}, status=status.HTTP_200_OK)
 
 
-# -----------------------------------------------------
-# Employee Name & Basic Info View
-# -----------------------------------------------------
-class EmployeeNameAPIView(APIView):
-    # permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        """
-        Retrieves the currently logged-in user's Employee profile
-        (name, designation, department, company).
-        """
-        try:
-            employee = request.user.employee
-            return Response({
-                'name': employee.name,
-                'designation': employee.designation.title if employee.designation else None,
-                'department': employee.department.name if employee.department else None,
-                'company': employee.company.name if employee.company else None
-            }, status=status.HTTP_200_OK)
-        except Employee.DoesNotExist:
-            return Response({'error': 'Employee profile not found'}, status=status.HTTP_404_NOT_FOUND)
-
 
 # -----------------------------------------------------
 # Department CRUD ViewSet
@@ -215,7 +191,7 @@ class EmployeeNameAPIView(APIView):
 class DepartmentViewSet(ModelViewSet):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
-    # permission_classes = [IsAdminOrHR, IsAuthenticated]  # Adjust as needed
+    # permission_classes = [HasGroupPermission]
 
 
 # -----------------------------------------------------
@@ -224,7 +200,7 @@ class DepartmentViewSet(ModelViewSet):
 class DesignationViewSet(ModelViewSet):
     queryset = Designation.objects.all()
     serializer_class = DesignationSerializer
-    # permission_classes = [IsAdminOrHR, IsAuthenticated]  # Adjust as needed
+    # permission_classes = [HasGroupPermission]
 
 # -----------------------------------------------------
 # Push Notification DeviceToken CRUD ViewSet
@@ -233,7 +209,7 @@ class DesignationViewSet(ModelViewSet):
 class DeviceTokenViewSet(ModelViewSet):
     queryset = DeviceToken.objects.all()
     serializer_class = DeviceTokenSerializer
-    # permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [HasGroupPermission]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -247,5 +223,6 @@ class GroupViewSet(ReadOnlyModelViewSet):
     """
     queryset = Group.objects.all()  # Query all groups
     serializer_class = GroupSerializer
+    # permission_classes = [HasGroupPermission]
     
 
