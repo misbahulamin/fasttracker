@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .views import UserRegistrationView, EmployeeListAPIView, UserLoginApiView, UserLogoutView, UserListView, DepartmentViewSet, DesignationViewSet, AddEmployeeViewset, GroupViewSet
+from .views import EmployeeNameAPIView, UserRegistrationView, EmployeeListAPIView, UserLoginApiView, UserLogoutView, UserListView, DepartmentViewSet, DesignationViewSet, AddEmployeeViewset, GroupViewSet
 
 
 router = DefaultRouter()
@@ -18,4 +18,5 @@ urlpatterns = [
     path('employee-list/<int:id>/', EmployeeListAPIView.as_view(), name='specific-employee'),
     path('user-list/', UserListView.as_view(), name='user-list'),
     path('logout/', UserLogoutView.as_view(), name='logout'),
+    path('employee-details/', EmployeeNameAPIView.as_view(), name='employee-details'),
 ]

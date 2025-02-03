@@ -226,3 +226,24 @@ class GroupViewSet(ReadOnlyModelViewSet):
     # permission_classes = [HasGroupPermission]
     
 
+# -----------------------------------------------------
+# Employee Name & Basic Info View
+# -----------------------------------------------------
+class EmployeeNameAPIView(APIView):
+    # permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Retrieves the currently logged-in user's Employee profile
+        (name, designation, department, company).
+        """
+        try:
+            employee = request.user.employee
+            return Response({
+                'name': employee.name,
+                'designation': employee.designation.title if employee.designation else None,
+                'department': employee.department.name if employee.department else None,
+                'company': employee.company.name if employee.company else None
+            }, status=status.HTTP_200_OK)
+        except Employee.DoesNotExist:
+            return Response({'error': 'Employee profile not found'}, status=status.HTTP_404_NOT_FOUND)
