@@ -227,7 +227,7 @@ class GroupViewSet(ReadOnlyModelViewSet):
     
 
 # -----------------------------------------------------
-# Employee Name & Basic Info View
+# Employee Name & Basic Info View (added again)
 # -----------------------------------------------------
 class EmployeeNameAPIView(APIView):
     # permission_classes = [IsAuthenticated]
