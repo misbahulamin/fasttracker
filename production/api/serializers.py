@@ -12,3 +12,8 @@ class LineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Line
         fields = ['id', 'name', 'description', 'operation_type', 'floor']
+
+class LinelistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Line
+        fields = '__all__'

@@ -48,7 +48,22 @@ class MachineViewSet(ModelViewSet):
     #         return [ordering]
     #     return super().get_ordering()
     
-
+class MachinePaginationViewSet(ModelViewSet):
+    queryset = Machine.objects.all()
+    serializer_class = MachineSerializer
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filterset_class = MachineFilter
+    ordering_fields = '__all__'  # Allows ordering on all fields
+    ordering = ['id']  
+    pagination_class = MachinePagination
+    # permission_classes = [HasGroupPermission]
+    search_fields = [
+        'machine_id', 'category__name', 'type__name', 'brand__name', 
+        'model_number', 'serial_no', 'line__name', 'sequence', 'supplier__name', 
+        'purchase_date', 'last_breakdown_start', 'last_repairing_start', 
+        'mechanic__name', 'operator__name', 'last_problem', 'status', 
+        'company__name', 'line__floor__name'
+    ]
 
 
     

@@ -225,9 +225,8 @@ class GroupViewSet(ReadOnlyModelViewSet):
     serializer_class = GroupSerializer
     # permission_classes = [HasGroupPermission]
     
-
 # -----------------------------------------------------
-# Employee Name & Basic Info View (added again)
+# Employee Name & Basic Info View
 # -----------------------------------------------------
 class EmployeeNameAPIView(APIView):
     # permission_classes = [IsAuthenticated]
@@ -247,3 +246,4 @@ class EmployeeNameAPIView(APIView):
             }, status=status.HTTP_200_OK)
         except Employee.DoesNotExist:
             return Response({'error': 'Employee profile not found'}, status=status.HTTP_404_NOT_FOUND)
+

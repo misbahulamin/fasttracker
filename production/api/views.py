@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from ..models import Line, Floor
-from .serializers import LineSerializer, FloorSerializer
+from .serializers import LineSerializer, FloorSerializer, LinelistSerializer
 from permissions.base_permissions import HasGroupPermission
 
 class LineViewSet(viewsets.ModelViewSet):
@@ -11,4 +11,10 @@ class LineViewSet(viewsets.ModelViewSet):
 class FloorViewSet(viewsets.ModelViewSet):
     queryset = Floor.objects.all()
     serializer_class = FloorSerializer
+    # permission_classes = [HasGroupPermission]
+
+
+class LinelistViewSet(viewsets.ModelViewSet):
+    queryset = Line.objects.select_related('floor').all()
+    serializer_class = LinelistSerializer
     # permission_classes = [HasGroupPermission]

@@ -1,10 +1,11 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import BreakdownLogViewSet,  MachineViewSet, TypeViewSet, SupplierViewSet, CategoryViewSet, BrandViewSet, ProblemCategoryViewSet, ProblemCategoryTypeViewSet
+from .views import BreakdownLogViewSet,  MachineViewSet, MachinePaginationViewSet, TypeViewSet, SupplierViewSet, CategoryViewSet, BrandViewSet, ProblemCategoryViewSet, ProblemCategoryTypeViewSet
 
 router = DefaultRouter()
 router.register(r'breakdown-logs', BreakdownLogViewSet, basename='breakdownlog')
 router.register(r'machines', MachineViewSet, basename='machine')
+router.register(r'machinepagination', MachinePaginationViewSet, basename='machinepagination')
 
 router.register(r'brand', BrandViewSet, basename='brand')
 router.register(r'supplier', SupplierViewSet, basename='supplier')
