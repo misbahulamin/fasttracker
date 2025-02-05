@@ -12,6 +12,7 @@ from rest_framework.exceptions import NotFound
 from django.db.models import Sum
 from rest_framework.decorators import action
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from datetime import timedelta
 from collections import defaultdict
 from rest_framework.exceptions import PermissionDenied
@@ -72,6 +73,90 @@ class BreakdownLogViewSet(ModelViewSet):
     serializer_class = BreakdownLogSerializer
     # permission_classes = [HasGroupPermission]
 
+    @action(detail=False, methods=["get"], url_path="total-lost-time-per-location")
+    def total_lost_time(self, request):
+
+        floors = request.query_params.get("floor", "")  # Example: "1,2,3"
+        line_nos = request.query_params.get("line", "")  # Example: "10,11"
+        dates = request.query_params.get("date", "")    # Example: "2025-02-05,2025-02-06"
+
+        floor_list = [f.strip() for f in floors.split(",") if f.strip()] if floors else []
+        line_no_list = [l.strip() for l in line_nos.split(",") if l.strip()] if line_nos else []
+        date_list = [d.strip() for d in dates.split(",") if d.strip()] if dates else []
+
+        breakdown_queryset = self.get_queryset()
+
+        # Filter by floor
+        if floor_list:
+            breakdown_queryset = breakdown_queryset.filter(line__floor__id__in=floor_list)
+
+        # Filter by line
+        if line_no_list:
+            breakdown_queryset = breakdown_queryset.filter(line__id__in=line_no_list)
+
+        # Filter by multiple dates if provided
+        if date_list:
+            parsed_dates = []
+            for date_str in date_list:
+                parsed_date = parse_date(date_str)
+                if parsed_date:
+                    parsed_dates.append(parsed_date)
+            if parsed_dates:
+                breakdown_queryset = breakdown_queryset.filter(breakdown_start__date__in=parsed_dates)
+
+        
+        total_lost_time = breakdown_queryset.aggregate(Sum("lost_time"))["lost_time__sum"]
+        formatted_total_lost_time = str(total_lost_time) if total_lost_time else "0:00:00"
+
+        
+        machine_queryset = Machine.objects.all()
+        
+        if floor_list:
+            machine_queryset = machine_queryset.filter(line__floor__id__in=floor_list)
+        if line_no_list:
+            machine_queryset = machine_queryset.filter(line__id__in=line_no_list)
+
+        # 5. Calculate machine stats
+        total_machine_count = machine_queryset.count()
+        total_active_machines = machine_queryset.filter(status="active").count()
+        total_repairing_machines = machine_queryset.filter(status="maintenance").count()
+        total_idle_machines = machine_queryset.filter(status="inactive").count()
+
+        machine_data = [
+            {
+                "id": machine.id,
+                "machine_id": machine.machine_id,
+                "model_number": machine.model_number,
+                "serial_no": machine.serial_no,
+                "purchase_date": machine.purchase_date,
+                "last_breakdown_start": machine.last_breakdown_start,
+                "status": machine.status,
+                "category": machine.category.name if machine.category else None,
+                "type": machine.type.name if machine.type else None,
+                "brand": machine.brand.name if machine.brand else None,
+                "line": machine.line.name if machine.line else None,
+                "floor": machine.line.floor.name if machine.line and machine.line.floor else None,
+                "supplier": machine.supplier.name if machine.supplier else None,
+            }
+            for machine in machine_queryset
+        ]
+
+        response_data = {
+            "floors": floor_list,
+            "line_nos": line_no_list,
+            "dates": date_list,
+            "total_lost_time": formatted_total_lost_time,
+            "total_machine_count": total_machine_count,
+            "total_active_machines": total_active_machines,
+            "total_repairing_machines": total_repairing_machines,
+            "total_idle_machines": total_idle_machines,
+            "machines": machine_data,
+        }
+
+        return Response(response_data)
+
+
+    """
     @action(detail=False, methods=["get"], url_path="total-lost-time-per-location")
     def total_lost_time(self, request):
         # Parse query parameters
@@ -141,6 +226,7 @@ class BreakdownLogViewSet(ModelViewSet):
         }
 
         return Response(response_data)
+    """
     
     @action(detail=False, methods=["get"], url_path="machines-monitoring")
     def machine_monitoring(self, request):

@@ -1,6 +1,7 @@
 from django.db import models
 from company.models import Company
 from maintenance.models import BreakdownLog
+from user_management.models import Employee
 
 class MachinePart(models.Model):
     name = models.CharField(max_length=255)
@@ -40,7 +41,7 @@ class PartsUsageRecord(models.Model):
     part = models.ForeignKey(MachinePart, on_delete=models.PROTECT)
     quantity_used = models.PositiveIntegerField()
     usage_date = models.DateTimeField(auto_now_add=True)
-    mechanic = models.CharField(max_length=255)  # Name of the mechanic
+    mechanic = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, related_name="mechanic_machine_part")
     breakdown = models.ForeignKey(BreakdownLog, on_delete=models.CASCADE)
     remarks = models.TextField(blank=True, null=True)  # Optional notes
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
