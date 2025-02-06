@@ -9,10 +9,11 @@ from rest_framework import filters
 from rest_framework.pagination import PageNumberPagination
 from permissions.base_permissions import HasGroupPermission
 from rest_framework.exceptions import NotFound
-from django.db.models import Sum
+from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, DurationField
 from rest_framework.decorators import action
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.db.models.functions import TruncDate
 from datetime import timedelta
 from collections import defaultdict
 from rest_framework.exceptions import PermissionDenied
@@ -73,6 +74,216 @@ class BreakdownLogViewSet(ModelViewSet):
     serializer_class = BreakdownLogSerializer
     # permission_classes = [HasGroupPermission]
 
+    @action(detail=False, methods=["get"], url_path="total-lost-time-per-location")
+    def total_lost_time(self, request):
+        
+        floors = request.query_params.get("floor", "")  # e.g., "1,2"
+        line_nos = request.query_params.get("line", "")  # e.g., "3"
+        dates = request.query_params.get("date", "")     # e.g., "2025-02-05,2025-02-06"
+
+        floor_list = [f.strip() for f in floors.split(",") if f.strip()] if floors else []
+        line_no_list = [l.strip() for l in line_nos.split(",") if l.strip()] if line_nos else []
+        date_list = [d.strip() for d in dates.split(",") if d.strip()] if dates else []
+
+        breakdown_queryset = self.get_queryset()
+
+        if floor_list:
+            breakdown_queryset = breakdown_queryset.filter(line__floor__id__in=floor_list)
+        if line_no_list:
+            breakdown_queryset = breakdown_queryset.filter(line__id__in=line_no_list)
+        if date_list:
+            # Parse each date; collect only valid ones
+            parsed_dates = []
+            for date_str in date_list:
+                parsed_date = parse_date(date_str)
+                if parsed_date:
+                    parsed_dates.append(parsed_date)
+            if parsed_dates:
+                breakdown_queryset = breakdown_queryset.filter(breakdown_start__date__in=parsed_dates)
+
+        # Calculate total lost time (stringified)
+        total_lost_time = breakdown_queryset.aggregate(total=Sum("lost_time"))["total"]
+        formatted_total_lost_time = str(total_lost_time) if total_lost_time else "0:00:00"
+
+        # Machines (filtered by floor/line but NOT date)
+        machine_queryset = Machine.objects.all()
+        if floor_list:
+            machine_queryset = machine_queryset.filter(line__floor__id__in=floor_list)
+        if line_no_list:
+            machine_queryset = machine_queryset.filter(line__id__in=line_no_list)
+
+        total_machine_count = machine_queryset.count()
+        total_active_machines = machine_queryset.filter(status="active").count()
+        total_repairing_machines = machine_queryset.filter(status="maintenance").count()
+        total_idle_machines = machine_queryset.filter(status="inactive").count()
+
+        # overall avg_time_to_respond for the filtered BreakdownLogs
+        # here, "time to respond" = (repairing_start - breakdown_start) and I exclude records with no repairing_start.
+        respond_stats = (
+            breakdown_queryset
+            .exclude(repairing_start__isnull=True)
+            .annotate(
+                respond_time=ExpressionWrapper(
+                    F('repairing_start') - F('breakdown_start'),
+                    output_field=DurationField()
+                )
+            )
+            .aggregate(avg_time=Avg('respond_time'))
+        )
+        overall_avg_respond_time = respond_stats["avg_time"]
+        formatted_avg_time_to_respond = str(overall_avg_respond_time) if overall_avg_respond_time else "0:00:00"
+
+        # Summaries
+
+        # summary by Machine (group by machine)
+        summary_by_machine_qs = (
+            breakdown_queryset
+            .values(
+                "machine__id",
+                "machine__machine_id",
+                "machine__status",
+                "machine__type__name",
+            )
+            .annotate(
+                breakdowns_count=Count("id"),
+                lost_time=Sum("lost_time")
+            )
+        )
+        summary_by_machine_id = []
+        for item in summary_by_machine_qs:
+            summary_by_machine_id.append({
+                "id": item["machine__id"],
+                "machine_id": item["machine__machine_id"],
+                "status": item["machine__status"],
+                "type": item["machine__type__name"] if item["machine__type__name"] else None,
+                "breakdowns_count": item["breakdowns_count"],
+                "lost_time": str(item["lost_time"]) if item["lost_time"] else "0:00:00",
+            })
+
+        # Summary by Type (group by machine type)
+        # Also count distinct machines of that type (in the *filtered breakdowns*)
+        summary_by_type_qs = (
+            breakdown_queryset
+            .values("machine__type__id", "machine__type__name")
+            .annotate(
+                machine_count=Count("machine__id", distinct=True),
+                breakdowns_count=Count("id"),
+                lost_time=Sum("lost_time"),
+            )
+        )
+        summary_by_type = []
+        for item in summary_by_type_qs:
+            summary_by_type.append({
+                "type": item["machine__type__name"] if item["machine__type__name"] else None,
+                "machine_count": item["machine_count"],
+                "breakdowns_count": item["breakdowns_count"],
+                "lost_time": str(item["lost_time"]) if item["lost_time"] else "0:00:00"
+            })
+
+        # Summary by Problem (group by problem_category)
+        summary_by_problem_qs = (
+            breakdown_queryset
+            .values("problem_category__id", "problem_category__name")
+            .annotate(
+                breakdowns_count=Count("id"),
+                lost_time=Sum("lost_time")
+            )
+        )
+        summary_by_problem = []
+        for item in summary_by_problem_qs:
+            summary_by_problem.append({
+                "problem": item["problem_category__name"] if item["problem_category__name"] else None,
+                "breakdowns_count": item["breakdowns_count"],
+                "lost_time": str(item["lost_time"]) if item["lost_time"] else "0:00:00"
+            })
+
+        # Summary by Line (group by line)
+        summary_by_line_qs = (
+            breakdown_queryset
+            .values("line__id", "line__name")
+            .annotate(
+                breakdowns_count=Count("id"),
+                lost_time=Sum("lost_time")
+            )
+        )
+        summary_by_line = []
+        for item in summary_by_line_qs:
+            summary_by_line.append({
+                "id": item["line__id"],
+                "line": item["line__name"] if item["line__name"] else None,
+                "breakdowns_count": item["breakdowns_count"],
+                "lost_time": str(item["lost_time"]) if item["lost_time"] else "0:00:00"
+            })
+
+        # Summary by Day (group by date of breakdown_start)
+        #    Use TruncDate to group by the date portion
+        summary_by_day_qs = (
+            breakdown_queryset
+            .annotate(date_only=TruncDate("breakdown_start"))
+            .values("date_only")
+            .annotate(
+                breakdowns_count=Count("id"),
+                lost_time=Sum("lost_time")
+            )
+        )
+        summary_by_day = []
+        for item in summary_by_day_qs:
+            summary_by_day.append({
+                "date": str(item["date_only"]),  # e.g., "2025-02-05"
+                "breakdowns_count": item["breakdowns_count"],
+                "lost_time": str(item["lost_time"]) if item["lost_time"] else "0:00:00"
+            })
+
+        # Summary by Mechanic (group by mechanic)
+        # Also include average time to respond per mechanic
+        summary_by_mechanic_qs = (
+            breakdown_queryset
+            # exclude logs that have no repairing_start so we can compute a response time
+            .exclude(repairing_start__isnull=True)
+            .annotate(
+                respond_time=ExpressionWrapper(
+                    F("repairing_start") - F("breakdown_start"),
+                    output_field=DurationField()
+                )
+            )
+            .values("mechanic__id")
+            .annotate(
+                breakdowns_count=Count("id"),
+                lost_time=Sum("lost_time"),
+                avg_time_to_respond=Avg("respond_time")
+            )
+        )
+        summary_by_mechanic = []
+        for item in summary_by_mechanic_qs:
+            summary_by_mechanic.append({
+                "id": item["mechanic__id"],
+                "avg_time_to_respond": str(item["avg_time_to_respond"]) if item["avg_time_to_respond"] else "0:00:00",
+                "breakdowns_count": item["breakdowns_count"],
+                "lost_time": str(item["lost_time"]) if item["lost_time"] else "0:00:00"
+            })
+
+        response_data = {
+            "floors": floor_list,
+            "line_nos": line_no_list,
+            "dates": date_list,
+            "total_lost_time": formatted_total_lost_time,
+            "total_machine_count": total_machine_count,
+            "total_active_machines": total_active_machines,
+            "total_repairing_machines": total_repairing_machines,
+            "total_idle_machines": total_idle_machines,       
+            "avg_time_to_respond": formatted_avg_time_to_respond,
+
+            "summary_by_machine_id": summary_by_machine_id,
+            "summary_by_type": summary_by_type,
+            "summary_by_problem": summary_by_problem,
+            "summary_by_line": summary_by_line,
+            "summary_by_day": summary_by_day,
+            "summary_by_mechanic": summary_by_mechanic,
+        }
+
+        return Response(response_data)
+
+    """
     @action(detail=False, methods=["get"], url_path="total-lost-time-per-location")
     def total_lost_time(self, request):
 
@@ -156,7 +367,7 @@ class BreakdownLogViewSet(ModelViewSet):
         return Response(response_data)
 
 
-    """
+    
     @action(detail=False, methods=["get"], url_path="total-lost-time-per-location")
     def total_lost_time(self, request):
         # Parse query parameters
