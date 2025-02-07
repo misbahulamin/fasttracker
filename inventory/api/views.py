@@ -1,5 +1,7 @@
 # views.py
 from rest_framework import viewsets
+from rest_framework.views import APIView
+from rest_framework import status
 from ..models import MachinePart, PurchaseItem, PartsUsageRecord
 from .serializers import MachinePartSerializer, PurchaseItemSerializer, PartsUsageRecordSerializer
 from rest_framework.response import Response
@@ -49,3 +51,22 @@ class PartsUsageRecordViewSet(viewsets.ModelViewSet):
         )['total_cost_sum'] or 0
 
         return Response({"total_cost": total_cost})
+    
+class BulkCreatePartsUsageView(APIView):
+    def post(self, request):
+        # Expecting a list of PartsUsageRecord objects in the request data
+        serializer = PartsUsageRecordSerializer(data=request.data, many=True)
+
+        if serializer.is_valid():
+            try:
+                # Save all valid records (model's save() method will handle validation)
+                saved_instances = serializer.save()
+                # Serialize the saved instances and return the response
+                response_serializer = PartsUsageRecordSerializer(saved_instances, many=True)
+                return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+            except ValueError as e:
+                # Handle the case where the model's save() method raises a ValueError (e.g., insufficient stock)
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Return serializer errors if the data is invalid
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
